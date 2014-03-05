@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<mule-configuration xmlns="http://www.mulesoft.com/tooling/messageflow" name="mule-config">
+    <flow SubFlow="false" name="testFlow" type="http://www.mulesoft.org/schema/mule/core/flow" entity-id="84020881-9352-428a-82cd-494ded1edc07">
+        <properties>
+            <property name="initialState"/>
+            <property name="processingStrategy2"/>
+            <property name="processingStrategy"/>
+            <property name="bussinessEventsLabel"/>
+            <property name="tracking:enable-default-events"/>
+            <property name="auxiliary;index" value="1"/>
+        </properties>
+        <lane hadOnlyOneElement="false" index="0" isChoiceOtherwiseLane="false" entity-id="compartment-lane#1">
+            <graphicalData x="0" y="0" width="0" height="0"/>
+            <unknown description="false" index="2" entity-id="unknown#1">
+                <graphicalData x="0" y="0" width="0" height="0"/>
+                <content>&lt;Lithium:get-distance xmlns:Lithium=&quot;http://www.mulesoft.org/schema/mule/Lithium&quot; destinations=&quot;San Francisco&quot; origins=&quot;San Ramon&quot; sensor=&quot;false&quot;/&gt;</content>
+            </unknown>
+        </lane>
+    </flow>
+</mule-configuration>

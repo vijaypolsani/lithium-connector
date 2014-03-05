@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<mule-project xmlns="http://www.mulesoft.com/tooling/project" runtimeId="org.mule.tooling.server.3.5.0.ee" schemaVersion="3.5.0.0">
+    <name>googlemaps-connector</name>
+    <description></description>
+    <muleExtension name="googlemaps" qualifier="org.mule.tooling.ui.contribution.googlemaps"/>
+</mule-project>

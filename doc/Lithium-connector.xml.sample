@@ -1,0 +1,3 @@
+<!-- BEGIN_INCLUDE(Lithium:get-distance) -->
+    <Lithium:get-distance destinations="Milbrae" origins="San Francisco" sensor="false"  />
+<!-- END_INCLUDE(Lithium:get-distance) -->
