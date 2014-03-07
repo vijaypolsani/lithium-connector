@@ -9,3 +9,7 @@
 <!-- BEGIN_INCLUDE(Lithium:get-kudos-leaderboard) -->
     <Lithium:get-kudos-leaderboard boardIdOrBlogName="scienceofsocial" maxAge="all" pageSize="100"  />
 <!-- END_INCLUDE(Lithium:get-kudos-leaderboard) -->
+
+<!-- BEGIN_INCLUDE(Lithium:get-recent-topics) -->
+    <Lithium:get-recent-topics boardIdOrBlogName="scienceofsocial" pageSize="100" page="1"  />
+<!-- END_INCLUDE(Lithium:get-recent-topics) -->

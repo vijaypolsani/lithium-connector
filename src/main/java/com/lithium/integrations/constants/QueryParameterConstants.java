@@ -13,4 +13,7 @@ public class QueryParameterConstants {
 	public static final String LOGIN_USER_NAME_VALUE = "admin";
 	public static final String LOGIN_PASSWORD_VALUE = "arfarf";
 	public static final String RESTAPI_SESSION_KEY = "restapi.session_key";
+	public static final String MAX_AGE = "max_age";
+	public static final String PAGE_SIZE = "page_size";
+	public static final String PAGE = "page";
 }

@@ -257,10 +257,47 @@ public abstract class LithiumConnector {
 			setCommunityName("");
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
 		String url = "http://" + getCommunityHostname() + "/" + getCommunityName() + "restapi/vc/blogs/id/"
-				+ boardIdOrBlogName + "kudos/givers/leaderboard";
+				+ boardIdOrBlogName + "/kudos/givers/leaderboard";
 		queryParam.putAll(getQueryParams());
-		queryParam.add(MESSAGE_SUBJECT, maxAge);
-		queryParam.add(MESSAGE_TEASER, pageSize);
+		queryParam.add(MAX_AGE, maxAge);
+		queryParam.add(PAGE_SIZE, pageSize);
+
+		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		if (reponseData.startsWith("3")) {
+			// retry with new session key;
+			System.out.println("Invalid Session Key. Hence retry. ");
+			populateSessionKey();
+			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		}
+		return reponseData;
+	}
+
+	/**
+	 * Custom processor for Get Recent Topics in a Board
+	 * <p/>
+	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-recent-topics}
+	 * message.author passing is not needed. THe logged in user is enough. If any other author name is kept. It thows an exception.
+	 * @param boardIdOrBlogName The name of the boardID that need to be used in Rest Call 	
+	 * @param pageSize Max age of the post for pull up	
+	 * @param page Max number of pages 	
+	 * @return Response string from the WebService Call
+	 * @throws java.io.IOException throws the exception
+	 */
+	@Processor
+	public String getRecentTopics(@Optional @Default("scienceofsocial") String boardIdOrBlogName,
+			@Optional @Default("100") String pageSize, @Optional @Default("1") String page) throws IOException {
+
+		if (getQueryParams().get(RESTAPI_SESSION_KEY) == null)
+			populateSessionKey();
+		System.out.println("Initial Query RestAPISession_Key Param: " + getQueryParams().get(RESTAPI_SESSION_KEY));
+		if (getCommunityName() == null)
+			setCommunityName("");
+		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
+		String url = "http://" + getCommunityHostname() + "/" + getCommunityName() + "restapi/vc/blogs/id/"
+				+ boardIdOrBlogName + "/topics/recent";
+		queryParam.putAll(getQueryParams());
+		queryParam.add(PAGE, page);
+		queryParam.add(PAGE_SIZE, pageSize);
 
 		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		if (reponseData.startsWith("3")) {
