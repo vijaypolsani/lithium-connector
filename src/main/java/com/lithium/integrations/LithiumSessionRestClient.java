@@ -6,6 +6,7 @@ import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
+import com.lithium.integrations.model.LithiumLoginResponse;
 import static com.lithium.integrations.constants.QueryParameterConstants.*;
 
 public class LithiumSessionRestClient {

@@ -170,21 +170,19 @@ public abstract class LithiumConnector {
 	}
 
 	/**
-	 * Custom processor
+	 * Custom processor for getting the latest message on the Board
 	 * <p/>
-	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-distance}
+	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-blog-latest}
 	 * 
-	 * @param origins Content to be processed
-	 * @param destinations Content to be processed
-	 * @param sensor A false sensor says whether we are using GMAPS sensors
+	 * @param boardIdOrBlogName A blog name to get latest from..
 	 * @return Some string
 	 * @throws java.io.IOException
 	 *             throws the exception
 	 */
 	@Processor
-	@RestCall(uri = ("http://maps.googleapis.com/maps/api/distancematrix/json"), method = org.mule.api.annotations.rest.HttpMethod.GET, contentType = "application/json", exceptions = { @RestExceptionOn(expression = "#[message.inboundProperties['http.status'] != 200]") })
-	public abstract String getDistance(@RestQueryParam("origins") String origins,
-			@RestQueryParam("destinations") String destinations, @RestQueryParam("sensor") String sensor)
+	@RestCall(uri = ("http://ldn.qa.lithium.com/restapi/vc/blogs/id/{boardName}/messages/latest"), method = org.mule.api.annotations.rest.HttpMethod.GET, contentType = "application/json", exceptions = { @RestExceptionOn(expression = "#[message.inboundProperties['http.status'] != 200]") })
+	public abstract String getBlogLatest(
+			@RestUriParam(value = "boardName") @Optional @Default("scienceofsocial") String boardIdOrBlogName)
 			throws IOException;
 
 	/**
@@ -204,11 +202,12 @@ public abstract class LithiumConnector {
 	 */
 	@Processor
 	public String postBlogMessage(@Optional @Default("scienceofsocial") String boardIdOrBlogName,
-			@Optional @Default("Mule Lithium Integration") String messageSubject,
-			@Optional @Default("Welcome to Lithium Integration") String messageTeaser,
+			@Optional @Default("Test From Mule connector calling LDN.") String messageSubject,
+			@Optional @Default("Welcome to Lithium Integrations") String messageTeaser,
 			@Optional @Default("Mule Lithium best practices.") String messageBody,
-			@Optional @Default("tag1,tag2") String tagAdd, @Optional @Default("label1,label2") String labels,
-			@Optional @Default("false") String messageIsDraft) throws IOException {
+			@Optional @Default("Stocks,News,Events") String tagAdd,
+			@Optional @Default("FIRST,TEST,GOAL") String labels, @Optional @Default("false") String messageIsDraft)
+			throws IOException {
 
 		if (getQueryParams().get(RESTAPI_SESSION_KEY) == null)
 			populateSessionKey();
@@ -225,6 +224,43 @@ public abstract class LithiumConnector {
 		queryParam.add(MESSAGE_ADD, tagAdd);
 		queryParam.add(LABEL_LABELS, labels);
 		queryParam.add(MESSAGE_IS_DRAFT, messageIsDraft);
+
+		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		if (reponseData.startsWith("3")) {
+			// retry with new session key;
+			System.out.println("Invalid Session Key. Hence retry. ");
+			populateSessionKey();
+			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		}
+		return reponseData;
+	}
+
+	/**
+	 * Custom processor for Kudos Givers leaderboard
+	 * <p/>
+	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-kudos-leaderboard}
+	 * message.author passing is not needed. THe logged in user is enough. If any other author name is kept. It thows an exception.
+	 * @param boardIdOrBlogName The name of the boardID that need to be used in Rest Call 	
+	 * @param maxAge Max age of the post for pull up	
+	 * @param pageSize Max number of pages 	
+	 * @return Response string from the WebService Call
+	 * @throws java.io.IOException throws the exception
+	 */
+	@Processor
+	public String getKudosLeaderboard(@Optional @Default("scienceofsocial") String boardIdOrBlogName,
+			@Optional @Default("all") String maxAge, @Optional @Default("100") String pageSize) throws IOException {
+
+		if (getQueryParams().get(RESTAPI_SESSION_KEY) == null)
+			populateSessionKey();
+		System.out.println("Initial Query RestAPISession_Key Param: " + getQueryParams().get(RESTAPI_SESSION_KEY));
+		if (getCommunityName() == null)
+			setCommunityName("");
+		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
+		String url = "http://" + getCommunityHostname() + "/" + getCommunityName() + "restapi/vc/blogs/id/"
+				+ boardIdOrBlogName + "kudos/givers/leaderboard";
+		queryParam.putAll(getQueryParams());
+		queryParam.add(MESSAGE_SUBJECT, maxAge);
+		queryParam.add(MESSAGE_TEASER, pageSize);
 
 		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		if (reponseData.startsWith("3")) {

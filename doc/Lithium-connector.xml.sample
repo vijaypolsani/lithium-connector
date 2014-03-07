@@ -1,7 +1,11 @@
-<!-- BEGIN_INCLUDE(Lithium:get-distance) -->
-    <Lithium:get-distance destinations="Milbrae" origins="San Francisco" sensor="false"  />
-<!-- END_INCLUDE(Lithium:get-distance) -->
+<!-- BEGIN_INCLUDE(Lithium:get-blog-latest) -->
+    <Lithium:get-blog-latest boardIdOrBlogName="scienceofsocial"  />
+<!-- END_INCLUDE(Lithium:get-blog-latest) -->
 
 <!-- BEGIN_INCLUDE(Lithium:post-blog-message) -->
-    <Lithium:post-blog-message messageSubject="Test From Mule" messageTeaser="GRRR" messageBody="Great Place to put stuff" tagAdd="" labels="" messageIsDraft=""  />
+    <Lithium:post-blog-message messageSubject="Test From Mule connector calling LDN." messageTeaser="GRRR" messageBody="Great Place to put stuff" tagAdd="Stocks,News,Events" labels="FIRST,TEST,GOAL" messageIsDraft="false"  />
 <!-- END_INCLUDE(Lithium:post-blog-message) -->
+
+<!-- BEGIN_INCLUDE(Lithium:get-kudos-leaderboard) -->
+    <Lithium:get-kudos-leaderboard boardIdOrBlogName="scienceofsocial" maxAge="all" pageSize="100"  />
+<!-- END_INCLUDE(Lithium:get-kudos-leaderboard) -->

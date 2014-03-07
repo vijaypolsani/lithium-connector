@@ -1,4 +1,4 @@
-package com.lithium.integrations;
+package com.lithium.integrations.model;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
