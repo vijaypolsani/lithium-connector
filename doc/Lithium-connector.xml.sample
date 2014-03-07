@@ -1,3 +1,7 @@
 <!-- BEGIN_INCLUDE(Lithium:get-distance) -->
     <Lithium:get-distance destinations="Milbrae" origins="San Francisco" sensor="false"  />
 <!-- END_INCLUDE(Lithium:get-distance) -->
+
+<!-- BEGIN_INCLUDE(Lithium:post-blog-message) -->
+    <Lithium:post-blog-message messageSubject="Test From Mule" messageTeaser="GRRR" messageBody="Great Place to put stuff" tagAdd="" labels="" messageIsDraft=""  />
+<!-- END_INCLUDE(Lithium:post-blog-message) -->

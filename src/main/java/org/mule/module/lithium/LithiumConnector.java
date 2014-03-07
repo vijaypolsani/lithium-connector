@@ -5,6 +5,8 @@ package org.mule.module.lithium;
 
 import java.io.IOException;
 
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.Connect;
 import org.mule.api.annotations.ValidateConnection;
@@ -20,96 +22,217 @@ import org.mule.api.annotations.rest.RestExceptionOn;
 import org.mule.api.ConnectionException;
 import org.mule.api.annotations.Configurable;
 import org.mule.api.annotations.Processor;
+import static com.lithium.integrations.constants.QueryParameterConstants.*;
+
+import com.lithium.integrations.LithiumSessionRestClient;
+import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
  * Cloud Connector
- *
+ * 
  * @author MuleSoft, Inc.
  */
-@Connector(name="Lithium", schemaVersion="1.0.0", friendlyName="Lithium", minMuleVersion="3.4")
-public abstract class LithiumConnector
-{
-    /**
-     * Configurable
-     */
-    @Configurable
-    @Optional
-    private String restApiSessionKey;
+@Connector(name = "Lithium", schemaVersion = "1.0.0", friendlyName = "Lithium", minMuleVersion = "3.4")
+public abstract class LithiumConnector {
 
-    public String getRestApiSessionKey() {
+	private final MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+
+	public MultivaluedMap<String, String> getQueryParams() {
+		return queryParams;
+	}
+
+	/**
+	 * Configurable
+	 */
+	@Configurable
+	@Optional
+	@Default("ldn.qa.lithium.com")
+	private String communityHostname = "ldn.qa.lithium.com";
+
+	public String getCommunityHostname() {
+		return communityHostname;
+	}
+
+	public void setCommunityHostname(String communityHostname) {
+		this.communityHostname = communityHostname;
+	}
+
+	/**
+	 * Configurable
+	 */
+	@Configurable
+	@Optional
+	@Default("")
+	private String communityName = "";
+
+	public String getCommunityName() {
+		return communityName;
+	}
+
+	public void setCommunityName(String communityName) {
+		this.communityName = communityName;
+	}
+
+	/**
+	 * Configurable
+	 */
+	@Configurable
+	@Optional
+	private String restApiSessionKey;
+
+	public String getRestApiSessionKey() {
 		return restApiSessionKey;
 	}
 
 	/**
-     * Set property
-     *
-     * @param restApiSessionKey The session key used for Lithium connectivity
-     */
-    public void setRestApiSessionKey(String restApiSessionKey)
-    {
-        this.restApiSessionKey = restApiSessionKey ;
-    }
+	 * Set property
+	 * 
+	 * @param restApiSessionKey
+	 *            The session key used for Lithium connectivity
+	 */
+	public void setRestApiSessionKey(String restApiSessionKey) {
+		this.restApiSessionKey = restApiSessionKey;
+	}
 
-    /**
-     * Connect
-     *
-     * @param username A username
-     * @param password A password
-     * @throws ConnectionException
-     */
-    @Connect
-    public void connect(@ConnectionKey String username, String password)
-        throws ConnectionException {
-        /*
-         * CODE FOR ESTABLISHING A CONNECTION GOES IN HERE
-         */
-    }
+	private String username;
 
-    /**
-     * Disconnect
-     */
-    @Disconnect
-    public void disconnect() {
-        /*
-         * CODE FOR CLOSING A CONNECTION GOES IN HERE
-         */
-    }
+	public String getUsername() {
+		return username;
+	}
 
-    /**
-     * Are we connected
-     */
-    @ValidateConnection
-    public boolean isConnected() {
-        return true;
-    }
+	public void setUsername(String username) {
+		this.username = username;
+	}
 
-    /**
-     * Are we connected
-     */
-    @ConnectionIdentifier
-    public String connectionId() {
-        return "001";
-    }
+	private String password;
 
-    /**
-     * Custom processor
-     *
-     * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-distance}
-     *
-     * @param origins Content to be processed
-     * @param destinations Content to be processed
-     * @param sensor A false sensor says whether we are using GMAPS sensors
-     * @return Some string
-     * @throws java.io.IOException throws the exception
-     */
-    @Processor
-    @RestCall(uri= ("http://maps.googleapis.com/maps/api/distancematrix/json"),
-    		method =org.mule.api.annotations.rest.HttpMethod.GET,
-    		contentType ="application/json",
-    		exceptions={@RestExceptionOn(expression="#[message.inboundProperties['http.status'] != 200]")})
-    public abstract String getDistance(
-    		@RestQueryParam ("origins") String origins, 
-    		@RestQueryParam("destinations") String destinations,
-    		@RestQueryParam("sensor") String sensor
-    		)throws IOException;
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public void populateSessionKey() {
+		MultivaluedMap<String, String> adminQueryParams = new MultivaluedMapImpl();
+		adminQueryParams.add(LOGIN_USER_NAME_PARAM, getUsername());
+		adminQueryParams.add(LOGIN_PASSWORD_PARAM, getPassword());
+		// Null implies login.
+		setRestApiSessionKey(LithiumSessionRestClient.invokeToGetRestSessionKey(null, adminQueryParams));
+		queryParams.add(RESTAPI_SESSION_KEY, getRestApiSessionKey());
+		System.out.println("Connected with User/Password " + username + " / " + password + " SessionKey: "
+				+ getRestApiSessionKey());
+
+	}
+
+	/**
+	 * Connect
+	 * 
+	 * @param username
+	 *            A username
+	 * @param password
+	 *            A password
+	 * @throws ConnectionException
+	 */
+	@Connect
+	public void connect(@ConnectionKey String username, String password) throws ConnectionException {
+		setUsername(username);
+		setPassword(password);
+		System.out.println("In Connect: " + getRestApiSessionKey());
+		populateSessionKey();
+	}
+
+	/**
+	 * Disconnect
+	 */
+	@Disconnect
+	public void disconnect() {
+		/*
+		 * CODE FOR CLOSING A CONNECTION GOES IN HERE
+		 */
+	}
+
+	/**
+	 * Are we connected
+	 */
+	@ValidateConnection
+	public boolean isConnected() {
+		return true;
+	}
+
+	/**
+	 * Are we connected
+	 */
+	@ConnectionIdentifier
+	public String connectionId() {
+		return "001";
+	}
+
+	/**
+	 * Custom processor
+	 * <p/>
+	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-distance}
+	 * 
+	 * @param origins Content to be processed
+	 * @param destinations Content to be processed
+	 * @param sensor A false sensor says whether we are using GMAPS sensors
+	 * @return Some string
+	 * @throws java.io.IOException
+	 *             throws the exception
+	 */
+	@Processor
+	@RestCall(uri = ("http://maps.googleapis.com/maps/api/distancematrix/json"), method = org.mule.api.annotations.rest.HttpMethod.GET, contentType = "application/json", exceptions = { @RestExceptionOn(expression = "#[message.inboundProperties['http.status'] != 200]") })
+	public abstract String getDistance(@RestQueryParam("origins") String origins,
+			@RestQueryParam("destinations") String destinations, @RestQueryParam("sensor") String sensor)
+			throws IOException;
+
+	/**
+	 * Custom processor for posting a message in the blog
+	 * <p/>
+	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:post-blog-message}
+	 * message.author passing is not needed. THe logged in user is enough. If any other author name is kept. It thows an exception.
+	 * @param boardIdOrBlogName The name of the boardID that need to be used in Rest Call 	
+	 * @param messageSubject Subject of the blog message 	
+	 * @param messageTeaser Message Teasor for display 	
+	 * @param messageBody Message Body to display 	
+	 * @param tagAdd Tag addition 	
+	 * @param labels Labels that can be added to the Blog	
+	 * @param messageIsDraft Checking whether message is a blog? true/false?	
+	 * @return Response string from the WebService Call
+	 * @throws java.io.IOException throws the exception
+	 */
+	@Processor
+	public String postBlogMessage(@Optional @Default("scienceofsocial") String boardIdOrBlogName,
+			@Optional @Default("Mule Lithium Integration") String messageSubject,
+			@Optional @Default("Welcome to Lithium Integration") String messageTeaser,
+			@Optional @Default("Mule Lithium best practices.") String messageBody,
+			@Optional @Default("tag1,tag2") String tagAdd, @Optional @Default("label1,label2") String labels,
+			@Optional @Default("false") String messageIsDraft) throws IOException {
+
+		if (getQueryParams().get(RESTAPI_SESSION_KEY) == null)
+			populateSessionKey();
+		System.out.println("Initial Query RestAPISession_Key Param: " + getQueryParams().get(RESTAPI_SESSION_KEY));
+		if (getCommunityName() == null)
+			setCommunityName("");
+		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
+		String url = "http://" + getCommunityHostname() + "/" + getCommunityName() + "restapi/vc/blogs/id/"
+				+ boardIdOrBlogName + "/messages/post";
+		queryParam.putAll(getQueryParams());
+		queryParam.add(MESSAGE_SUBJECT, messageSubject);
+		queryParam.add(MESSAGE_TEASER, messageTeaser);
+		queryParam.add(MESSAGE_BODY, messageBody);
+		queryParam.add(MESSAGE_ADD, tagAdd);
+		queryParam.add(LABEL_LABELS, labels);
+		queryParam.add(MESSAGE_IS_DRAFT, messageIsDraft);
+
+		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		if (reponseData.startsWith("3")) {
+			// retry with new session key;
+			System.out.println("Invalid Session Key. Hence retry. ");
+			populateSessionKey();
+			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		}
+		return reponseData;
+	}
 }
