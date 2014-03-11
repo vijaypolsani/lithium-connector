@@ -11,5 +11,18 @@
 <!-- END_INCLUDE(Lithium:get-kudos-leaderboard) -->
 
 <!-- BEGIN_INCLUDE(Lithium:get-recent-topics) -->
-    <Lithium:get-recent-topics boardIdOrBlogName="scienceofsocial" pageSize="100" page="1"  />
+    <Lithium:get-recent-topics boardIdOrBlogName="scienceofsocial" moderationScope="approved" visibilityScope="public"  />
 <!-- END_INCLUDE(Lithium:get-recent-topics) -->
+
+<!-- BEGIN_INCLUDE(Lithium:get-topic-message) -->
+    <Lithium:get-topic-message boardIdOrBlogName="scienceofsocial" messageId="1267" />
+<!-- END_INCLUDE(Lithium:get-topic-message) -->
+
+<!-- BEGIN_INCLUDE(Lithium:get-author) -->
+    <Lithium:get-author userId="1" />
+<!-- END_INCLUDE(Lithium:get-author) -->
+
+<!-- BEGIN_INCLUDE(Lithium:get-author-avatar) -->
+    <Lithium:get-author-avatar userId="1" />
+<!-- END_INCLUDE(Lithium:get-author-avatar) -->
+

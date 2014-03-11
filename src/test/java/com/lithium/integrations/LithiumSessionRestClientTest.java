@@ -7,6 +7,8 @@ import static com.lithium.integrations.constants.QueryParameterConstants.MESSAGE
 import static com.lithium.integrations.constants.QueryParameterConstants.MESSAGE_SUBJECT;
 import static com.lithium.integrations.constants.QueryParameterConstants.MESSAGE_TEASER;
 import static com.lithium.integrations.constants.QueryParameterConstants.RESTAPI_SESSION_KEY;
+import static com.lithium.integrations.constants.QueryParameterConstants.LOGIN_USER_NAME_PARAM;
+import static com.lithium.integrations.constants.QueryParameterConstants.*;
 import static org.junit.Assert.*;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -29,7 +31,10 @@ public class LithiumSessionRestClientTest {
 
 	@Test
 	public void test() {
-		assertNotNull(LithiumSessionRestClient.invokeToGetRestSessionKey(null, null));
+		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
+		queryParam.add(LOGIN_USER_NAME_PARAM, LOGIN_USER_NAME_VALUE);
+		queryParam.add(LOGIN_PASSWORD_PARAM, LOGIN_PASSWORD_VALUE);
+		assertNotNull(LithiumSessionRestClient.invokeToGetRestSessionKey(null, queryParam));
 	}
 
 	@Test

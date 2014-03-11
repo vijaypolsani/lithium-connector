@@ -16,4 +16,7 @@ public class QueryParameterConstants {
 	public static final String MAX_AGE = "max_age";
 	public static final String PAGE_SIZE = "page_size";
 	public static final String PAGE = "page";
+	public static final String MODERATION_SCOPE = "moderation.scope";
+	public static final String VISIBILITY_SCOPE = "visibility.scope";
+		
 }

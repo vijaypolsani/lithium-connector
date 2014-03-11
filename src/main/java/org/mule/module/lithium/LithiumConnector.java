@@ -6,7 +6,6 @@ package org.mule.module.lithium;
 import java.io.IOException;
 
 import javax.ws.rs.core.MultivaluedMap;
-
 import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.Connect;
 import org.mule.api.annotations.ValidateConnection;
@@ -16,6 +15,7 @@ import org.mule.api.annotations.param.ConnectionKey;
 import org.mule.api.annotations.param.Default;
 import org.mule.api.annotations.param.Optional;
 import org.mule.api.annotations.rest.RestCall;
+import org.mule.api.annotations.rest.RestHeaderParam;
 import org.mule.api.annotations.rest.RestQueryParam;
 import org.mule.api.annotations.rest.RestUriParam;
 import org.mule.api.annotations.rest.RestExceptionOn;
@@ -37,6 +37,16 @@ public abstract class LithiumConnector {
 
 	private final MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
 
+	private static String sessionKey = null;
+
+	public static String getSessionKey() {
+		return sessionKey;
+	}
+
+	public static void setSessionKey(String sessionKey) {
+		LithiumConnector.sessionKey = sessionKey;
+	}
+
 	public MultivaluedMap<String, String> getQueryParams() {
 		return queryParams;
 	}
@@ -44,11 +54,18 @@ public abstract class LithiumConnector {
 	/**
 	 * Configurable
 	 */
+	@RestUriParam(value = "communityHostname")
 	@Configurable
 	@Optional
 	@Default("ldn.qa.lithium.com")
-	private String communityHostname = "ldn.qa.lithium.com";
+	private String communityHostname;
 
+	/**
+	 * get property
+	 * 
+	 * @return String Community Host Name
+	 *            The session key used for Lithium connectivity
+	 */
 	public String getCommunityHostname() {
 		return communityHostname;
 	}
@@ -60,11 +77,18 @@ public abstract class LithiumConnector {
 	/**
 	 * Configurable
 	 */
+	@RestUriParam(value = "communityName")
 	@Configurable
 	@Optional
 	@Default("")
-	private String communityName = "";
+	private String communityName;
 
+	/**
+	 * get property
+	 * 
+	 * @return String Session Key
+	 *            The session key used for Lithium connectivity
+	 */
 	public String getCommunityName() {
 		return communityName;
 	}
@@ -77,9 +101,44 @@ public abstract class LithiumConnector {
 	 * Configurable
 	 */
 	@Configurable
+	private String lithiumUserName;
+
+	public String getLithiumUserName() {
+		return lithiumUserName;
+	}
+
+	public void setLithiumUserName(String lithiumUserName) {
+		this.lithiumUserName = lithiumUserName;
+	}
+
+	/**
+	 * Configurable
+	 */
+	@Configurable
+	private String lithiumPassword;
+
+	public String getLithiumPassword() {
+		return lithiumPassword;
+	}
+
+	public void setLithiumPassword(String lithiumPassword) {
+		this.lithiumPassword = lithiumPassword;
+	}
+
+	/**
+	 * Configurable
+	 */
+	@RestUriParam(value = "restApiSessionKey")
+	@Configurable
 	@Optional
 	private String restApiSessionKey;
 
+	/**
+	 * get property
+	 * 
+	 * @return String Session Key
+	 *            The session key used for Lithium connectivity
+	 */
 	public String getRestApiSessionKey() {
 		return restApiSessionKey;
 	}
@@ -94,53 +153,33 @@ public abstract class LithiumConnector {
 		this.restApiSessionKey = restApiSessionKey;
 	}
 
-	private String username;
-
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	private String password;
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
+	/**
+	 * Configurable
+	 */
 	public void populateSessionKey() {
+		System.out.println("**Start of populateSessionKey with User/Password: " + getLithiumUserName() + "/"
+				+ getLithiumPassword() + " SessionKey: " + getRestApiSessionKey() + " Hostname: "
+				+ getCommunityHostname());
 		MultivaluedMap<String, String> adminQueryParams = new MultivaluedMapImpl();
-		adminQueryParams.add(LOGIN_USER_NAME_PARAM, getUsername());
-		adminQueryParams.add(LOGIN_PASSWORD_PARAM, getPassword());
+		adminQueryParams.add(LOGIN_USER_NAME_PARAM, getLithiumUserName());
+		adminQueryParams.add(LOGIN_PASSWORD_PARAM, getLithiumPassword());
 		// Null implies login.
-		setRestApiSessionKey(LithiumSessionRestClient.invokeToGetRestSessionKey(null, adminQueryParams));
-		queryParams.add(RESTAPI_SESSION_KEY, getRestApiSessionKey());
-		System.out.println("Connected with User/Password " + username + " / " + password + " SessionKey: "
-				+ getRestApiSessionKey());
+		setSessionKey(LithiumSessionRestClient.invokeToGetRestSessionKey(null, adminQueryParams));
+		queryParams.add(RESTAPI_SESSION_KEY, getSessionKey());
+		System.out.println("** End of populateSessionKey queryParams: " + queryParams);
 
 	}
 
 	/**
 	 * Connect
 	 * 
-	 * @param username
-	 *            A username
-	 * @param password
-	 *            A password
+	 * @param username The username for Lithim Login
+	 * @param password A password for Lithium Password
 	 * @throws ConnectionException
 	 */
 	@Connect
 	public void connect(@ConnectionKey String username, String password) throws ConnectionException {
-		setUsername(username);
-		setPassword(password);
-		System.out.println("In Connect: " + getRestApiSessionKey());
-		populateSessionKey();
+		System.out.println("**In Connect. username/password: " + username + "/" + password);
 	}
 
 	/**
@@ -180,7 +219,7 @@ public abstract class LithiumConnector {
 	 *             throws the exception
 	 */
 	@Processor
-	@RestCall(uri = ("http://ldn.qa.lithium.com/restapi/vc/blogs/id/{boardName}/messages/latest"), method = org.mule.api.annotations.rest.HttpMethod.GET, contentType = "application/json", exceptions = { @RestExceptionOn(expression = "#[message.inboundProperties['http.status'] != 200]") })
+	@RestCall(uri = ("http://{communityHostName}/restapi/vc/blogs/id/{boardName}/messages/latest"), method = org.mule.api.annotations.rest.HttpMethod.GET, contentType = "application/json", exceptions = { @RestExceptionOn(expression = "#[message.inboundProperties['http.status'] != 200]") })
 	public abstract String getBlogLatest(
 			@RestUriParam(value = "boardName") @Optional @Default("scienceofsocial") String boardIdOrBlogName)
 			throws IOException;
@@ -209,13 +248,13 @@ public abstract class LithiumConnector {
 			@Optional @Default("FIRST,TEST,GOAL") String labels, @Optional @Default("false") String messageIsDraft)
 			throws IOException {
 
-		if (getQueryParams().get(RESTAPI_SESSION_KEY) == null)
+		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
+			System.out.println("-- Session key is NULL. Trying to do admin call." + getQueryParams());
 			populateSessionKey();
-		System.out.println("Initial Query RestAPISession_Key Param: " + getQueryParams().get(RESTAPI_SESSION_KEY));
-		if (getCommunityName() == null)
-			setCommunityName("");
+		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
-		String url = "http://" + getCommunityHostname() + "/" + getCommunityName() + "restapi/vc/blogs/id/"
+		String url = "http://" + getCommunityHostname() + "/"
+				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/messages/post";
 		queryParam.putAll(getQueryParams());
 		queryParam.add(MESSAGE_SUBJECT, messageSubject);
@@ -228,7 +267,7 @@ public abstract class LithiumConnector {
 		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
-			System.out.println("Invalid Session Key. Hence retry. ");
+			System.out.println("--Invalid Session Key. Hence retry. ");
 			populateSessionKey();
 			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		}
@@ -250,13 +289,13 @@ public abstract class LithiumConnector {
 	public String getKudosLeaderboard(@Optional @Default("scienceofsocial") String boardIdOrBlogName,
 			@Optional @Default("all") String maxAge, @Optional @Default("100") String pageSize) throws IOException {
 
-		if (getQueryParams().get(RESTAPI_SESSION_KEY) == null)
+		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
+			System.out.println("-- Session key is NULL. Trying to do admin call." + getQueryParams());
 			populateSessionKey();
-		System.out.println("Initial Query RestAPISession_Key Param: " + getQueryParams().get(RESTAPI_SESSION_KEY));
-		if (getCommunityName() == null)
-			setCommunityName("");
+		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
-		String url = "http://" + getCommunityHostname() + "/" + getCommunityName() + "restapi/vc/blogs/id/"
+		String url = "http://" + getCommunityHostname() + "/"
+				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/kudos/givers/leaderboard";
 		queryParam.putAll(getQueryParams());
 		queryParam.add(MAX_AGE, maxAge);
@@ -265,7 +304,7 @@ public abstract class LithiumConnector {
 		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
-			System.out.println("Invalid Session Key. Hence retry. ");
+			System.out.println("--Invalid Session Key. Hence retry. ");
 			populateSessionKey();
 			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		}
@@ -278,31 +317,134 @@ public abstract class LithiumConnector {
 	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-recent-topics}
 	 * message.author passing is not needed. THe logged in user is enough. If any other author name is kept. It thows an exception.
 	 * @param boardIdOrBlogName The name of the boardID that need to be used in Rest Call 	
-	 * @param pageSize Max age of the post for pull up	
-	 * @param page Max number of pages 	
+	 * @param moderationScope Moderation Scope for the user	
+	 * @param visibilityScope Visibility scope of the user
 	 * @return Response string from the WebService Call
 	 * @throws java.io.IOException throws the exception
 	 */
 	@Processor
 	public String getRecentTopics(@Optional @Default("scienceofsocial") String boardIdOrBlogName,
-			@Optional @Default("100") String pageSize, @Optional @Default("1") String page) throws IOException {
+			@Optional @Default("approved") String moderationScope, @Optional @Default("public") String visibilityScope)
+			throws IOException {
 
-		if (getQueryParams().get(RESTAPI_SESSION_KEY) == null)
+		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
+			System.out.println("-- Session key is NULL. Trying to do admin call." + getQueryParams());
 			populateSessionKey();
-		System.out.println("Initial Query RestAPISession_Key Param: " + getQueryParams().get(RESTAPI_SESSION_KEY));
-		if (getCommunityName() == null)
-			setCommunityName("");
+		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
-		String url = "http://" + getCommunityHostname() + "/" + getCommunityName() + "restapi/vc/blogs/id/"
+		String url = "http://" + getCommunityHostname() + "/"
+				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/topics/recent";
 		queryParam.putAll(getQueryParams());
-		queryParam.add(PAGE, page);
-		queryParam.add(PAGE_SIZE, pageSize);
+		queryParam.add(MODERATION_SCOPE, moderationScope);
+		queryParam.add(VISIBILITY_SCOPE, visibilityScope);
 
 		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
-			System.out.println("Invalid Session Key. Hence retry. ");
+			System.out.println("--Invalid Session Key. Hence retry. ");
+			populateSessionKey();
+			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		}
+		return reponseData;
+	}
+
+	// TODO: Try sending the object type to marshall response.
+	/**
+	 * Custom processor for getting the latest message on the Board
+	 * <p/>
+	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-topic-message}
+	 * 
+	 * @param boardIdOrBlogName A parameter to pass for board or blog name id.
+	 * @param messageId A parameter to pass message id.
+	 * @return Some string
+	 * @throws java.io.IOException
+	 *             throws the exception
+	 */
+	@Processor
+	public String getTopicMessage(@Optional @Default("scienceofsocial") String boardIdOrBlogName,
+			@Optional @Default("1267") String messageId) throws IOException {
+
+		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
+			System.out.println("-- Session key is NULL. Trying to do admin call." + getQueryParams());
+			populateSessionKey();
+		}
+		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
+		String url = "http://" + getCommunityHostname() + "/"
+				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
+				+ boardIdOrBlogName + "/messages/id/" + messageId;
+		queryParam.putAll(getQueryParams());
+
+		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		if (reponseData.startsWith("3")) {
+			// retry with new session key;
+			System.out.println("--Invalid Session Key. Hence retry. ");
+			populateSessionKey();
+			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		}
+		return reponseData;
+	}
+
+	// TODO: Try sending the object type to marshall response.
+	/**
+	 * Custom processor for getting the latest message on the Board
+	 * <p/>
+	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-author}
+	 * 
+	 * @param userId A parameter to pass message id.
+	 * @return Some string
+	 * @throws java.io.IOException
+	 *             throws the exception
+	 */
+	@Processor
+	public String getAuthor(@Optional @Default("1") String userId) throws IOException {
+		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
+			System.out.println("-- Session key is NULL. Trying to do admin call." + getQueryParams());
+			populateSessionKey();
+		}
+		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
+		String url = "http://" + getCommunityHostname() + "/"
+				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId;
+		queryParam.putAll(getQueryParams());
+
+		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		if (reponseData.startsWith("3")) {
+			// retry with new session key;
+			System.out.println("--Invalid Session Key. Hence retry. ");
+			populateSessionKey();
+			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		}
+		return reponseData;
+	}
+
+	// TODO: Try sending the object type to marshall response.
+	/**
+	 * Custom processor for getting the latest message on the Board
+	 * <p/>
+	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-author-avatar}
+	 * 
+	 * @param userId A parameter to pass message id.
+	 * @return Some string
+	 * @throws java.io.IOException
+	 *             throws the exception
+	 */
+	@Processor
+	public String getAuthorAvatar(@Optional @Default("1") String userId) throws IOException {
+
+		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
+			System.out.println("-- Session key is NULL. Trying to do admin call." + getQueryParams());
+			populateSessionKey();
+		}
+		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
+		String url = "http://" + getCommunityHostname() + "/"
+				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId
+				+ "/profiles/avatar";
+		queryParam.putAll(getQueryParams());
+
+		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		if (reponseData.startsWith("3")) {
+			// retry with new session key;
+			System.out.println("--Invalid Session Key. Hence retry. ");
 			populateSessionKey();
 			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		}
