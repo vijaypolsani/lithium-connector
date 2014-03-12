@@ -18,5 +18,6 @@ public class QueryParameterConstants {
 	public static final String PAGE = "page";
 	public static final String MODERATION_SCOPE = "moderation.scope";
 	public static final String VISIBILITY_SCOPE = "visibility.scope";
-		
+	public static final String RESPONSE_FORMAT_PARAM = "restapi.response_format";
+	public static final String RESPONSE_FORMAT_VALUE = "json";
 }

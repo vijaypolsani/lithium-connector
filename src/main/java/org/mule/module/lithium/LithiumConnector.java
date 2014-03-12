@@ -338,6 +338,7 @@ public abstract class LithiumConnector {
 		queryParam.putAll(getQueryParams());
 		queryParam.add(MODERATION_SCOPE, moderationScope);
 		queryParam.add(VISIBILITY_SCOPE, visibilityScope);
+		queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 
 		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		if (reponseData.startsWith("3")) {
@@ -374,6 +375,7 @@ public abstract class LithiumConnector {
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/messages/id/" + messageId;
 		queryParam.putAll(getQueryParams());
+		queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 
 		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		if (reponseData.startsWith("3")) {
@@ -406,7 +408,7 @@ public abstract class LithiumConnector {
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId;
 		queryParam.putAll(getQueryParams());
-
+		queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
@@ -440,7 +442,7 @@ public abstract class LithiumConnector {
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId
 				+ "/profiles/avatar";
 		queryParam.putAll(getQueryParams());
-
+		queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
