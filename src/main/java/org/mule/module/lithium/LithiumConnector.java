@@ -37,16 +37,6 @@ public abstract class LithiumConnector {
 
 	private final MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
 
-	private static String sessionKey = null;
-
-	public static String getSessionKey() {
-		return sessionKey;
-	}
-
-	public static void setSessionKey(String sessionKey) {
-		LithiumConnector.sessionKey = sessionKey;
-	}
-
 	public MultivaluedMap<String, String> getQueryParams() {
 		return queryParams;
 	}
@@ -164,9 +154,9 @@ public abstract class LithiumConnector {
 		adminQueryParams.add(LOGIN_USER_NAME_PARAM, getLithiumUserName());
 		adminQueryParams.add(LOGIN_PASSWORD_PARAM, getLithiumPassword());
 		// Null implies login.
-		setSessionKey(LithiumSessionRestClient.invokeToGetRestSessionKey(null, adminQueryParams));
-		queryParams.add(RESTAPI_SESSION_KEY, getSessionKey());
-		System.out.println("** End of populateSessionKey queryParams: " + queryParams);
+		LithiumSessionRestClient.invokeToGetRestSessionKey(null, adminQueryParams);
+		System.out.println("** End of populateSessionKey Key: "
+				+ LithiumSessionRestClient.invokeToGetRestSessionKey(null, adminQueryParams));
 
 	}
 
@@ -249,14 +239,14 @@ public abstract class LithiumConnector {
 			throws IOException {
 
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call." + getQueryParams());
+			System.out.println("-- Session key is NULL. Trying to do admin call.");
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/messages/post";
-		queryParam.putAll(getQueryParams());
+		queryParam.add(RESTAPI_SESSION_KEY, LithiumSessionRestClient.getRestApiSessionKey());
 		queryParam.add(MESSAGE_SUBJECT, messageSubject);
 		queryParam.add(MESSAGE_TEASER, messageTeaser);
 		queryParam.add(MESSAGE_BODY, messageBody);
@@ -290,14 +280,14 @@ public abstract class LithiumConnector {
 			@Optional @Default("all") String maxAge, @Optional @Default("100") String pageSize) throws IOException {
 
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call." + getQueryParams());
+			System.out.println("-- Session key is NULL. Trying to do admin call.");
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/kudos/givers/leaderboard";
-		queryParam.putAll(getQueryParams());
+		queryParam.add(RESTAPI_SESSION_KEY, LithiumSessionRestClient.getRestApiSessionKey());
 		queryParam.add(MAX_AGE, maxAge);
 		queryParam.add(PAGE_SIZE, pageSize);
 
@@ -328,14 +318,14 @@ public abstract class LithiumConnector {
 			throws IOException {
 
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call." + getQueryParams());
+			System.out.println("-- Session key is NULL. Trying to do admin call.");
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/topics/recent";
-		queryParam.putAll(getQueryParams());
+		queryParam.add(RESTAPI_SESSION_KEY, LithiumSessionRestClient.getRestApiSessionKey());
 		queryParam.add(MODERATION_SCOPE, moderationScope);
 		queryParam.add(VISIBILITY_SCOPE, visibilityScope);
 		queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
@@ -367,14 +357,14 @@ public abstract class LithiumConnector {
 			@Optional @Default("1267") String messageId) throws IOException {
 
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call." + getQueryParams());
+			System.out.println("-- Session key is NULL. Trying to do admin call.");
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/messages/id/" + messageId;
-		queryParam.putAll(getQueryParams());
+		queryParam.add(RESTAPI_SESSION_KEY, LithiumSessionRestClient.getRestApiSessionKey());
 		queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 
 		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
@@ -401,14 +391,14 @@ public abstract class LithiumConnector {
 	@Processor
 	public String getAuthor(@Optional @Default("1") String userId) throws IOException {
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call." + getQueryParams());
+			System.out.println("-- Session key is NULL. Trying to do admin call.");
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId;
-		queryParam.putAll(getQueryParams());
-		queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
+		queryParam.add(RESTAPI_SESSION_KEY, LithiumSessionRestClient.getRestApiSessionKey());
+		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
@@ -434,15 +424,15 @@ public abstract class LithiumConnector {
 	public String getAuthorAvatar(@Optional @Default("1") String userId) throws IOException {
 
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call." + getQueryParams());
+			System.out.println("-- Session key is NULL. Trying to do admin call.");
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId
 				+ "/profiles/avatar";
-		queryParam.putAll(getQueryParams());
-		queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
+		queryParam.add(RESTAPI_SESSION_KEY, LithiumSessionRestClient.getRestApiSessionKey());
+		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;

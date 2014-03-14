@@ -13,7 +13,7 @@ public class LithiumSessionRestClient {
 	private static String restApiSessionKey = null;
 	private static Client client = Client.create();
 
-	public static synchronized String getRestApiSessionKey() {
+	public static String getRestApiSessionKey() {
 		return restApiSessionKey;
 	}
 
