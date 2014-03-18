@@ -22,13 +22,11 @@ public class LithiumSessionRestClient {
 	}
 
 	public static String invokeToGetRestSessionKey(String url, MultivaluedMap<String, String> queryParams) {
-		boolean adminCall = false;
 		if (url == null) {
 			url = LOGIN_URL;
-			adminCall = true;
 		}
-		System.out.println("In Jersey Client. URL: " + url);
-		System.out.println("In Jersey Client. queryParams: " + queryParams);
+		System.out.println("In Jersey Client. Login URL: " + url);
+		System.out.println("In Jersey Client. Login queryParams: " + queryParams);
 		WebResource webResource = client.resource(url);
 		ClientResponse response = webResource.queryParams(queryParams).accept("application/xml")
 				.get(ClientResponse.class);
@@ -38,19 +36,31 @@ public class LithiumSessionRestClient {
 		} else if (String.valueOf(response.getStatus()).startsWith("3")) {
 			return String.valueOf(response.getStatus());
 		}
-		if (adminCall) {
-			System.out.println("In Jersey Client. Made Admin Call.");
-			LithiumLoginResponse lithiumLoginResponse = response.getEntity(LithiumLoginResponse.class);
-			System.out.println(lithiumLoginResponse);
-			setRestApiSessionKey(lithiumLoginResponse.getValue());
-			return lithiumLoginResponse.getValue();
-		} else {
-			System.out.println("In Jersey Client. Making genric restapi Call.");
-			String restResponse = response.getEntity(String.class);
-			System.out.println(restResponse);
-			return restResponse;
-		}
+		System.out.println("In Jersey Client. Made Admin Call.");
+		LithiumLoginResponse lithiumLoginResponse = response.getEntity(LithiumLoginResponse.class);
+		System.out.println(lithiumLoginResponse);
+		setRestApiSessionKey(lithiumLoginResponse.getValue());
+		return lithiumLoginResponse.getValue();
+	}
 
+	public static String invokeGenericRestCall(String url, MultivaluedMap<String, String> queryParams) {
+		System.out.println("In Jersey Client. Generic URL: " + url);
+		if (getRestApiSessionKey() != null)
+			queryParams.add(RESTAPI_SESSION_KEY, getRestApiSessionKey());
+		else
+			return "399";
+		System.out.println("In Jersey Client. Generic queryParams: " + queryParams);
+		WebResource webResource = client.resource(url);
+		ClientResponse response = webResource.queryParams(queryParams).accept("application/xml")
+				.get(ClientResponse.class);
+		if (response.getStatus() != 200) {
+			System.out.println("In Jersey Client. Rest Call is Not Successfull: " + response.getStatus());
+			return String.valueOf(response.getStatus());
+		}
+		System.out.println("In Jersey Client. Making Genric restapi Call.");
+		String restResponse = response.getEntity(String.class);
+		System.out.println(restResponse);
+		return restResponse;
 	}
 
 	public static void main(String args[]) {

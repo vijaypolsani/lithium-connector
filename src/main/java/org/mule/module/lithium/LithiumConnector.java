@@ -155,9 +155,7 @@ public abstract class LithiumConnector {
 		adminQueryParams.add(LOGIN_PASSWORD_PARAM, getLithiumPassword());
 		// Null implies login.
 		LithiumSessionRestClient.invokeToGetRestSessionKey(null, adminQueryParams);
-		System.out.println("** End of populateSessionKey Key: "
-				+ LithiumSessionRestClient.invokeToGetRestSessionKey(null, adminQueryParams));
-
+		System.out.println("** End of populateSessionKey Key: " + LithiumSessionRestClient.getRestApiSessionKey());
 	}
 
 	/**
@@ -246,7 +244,6 @@ public abstract class LithiumConnector {
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/messages/post";
-		queryParam.add(RESTAPI_SESSION_KEY, LithiumSessionRestClient.getRestApiSessionKey());
 		queryParam.add(MESSAGE_SUBJECT, messageSubject);
 		queryParam.add(MESSAGE_TEASER, messageTeaser);
 		queryParam.add(MESSAGE_BODY, messageBody);
@@ -254,12 +251,16 @@ public abstract class LithiumConnector {
 		queryParam.add(LABEL_LABELS, labels);
 		queryParam.add(MESSAGE_IS_DRAFT, messageIsDraft);
 
-		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
 			System.out.println("--Invalid Session Key. Hence retry. ");
 			populateSessionKey();
 			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		} else if (reponseData.startsWith("4")) {
+			// Page not found etc;
+			System.out.println("--Invalid Request. Check the URL and come back again. ");
+			throw new RuntimeException("--Invalid Request. Check the URL and come back again.");
 		}
 		return reponseData;
 	}
@@ -287,11 +288,9 @@ public abstract class LithiumConnector {
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/kudos/givers/leaderboard";
-		queryParam.add(RESTAPI_SESSION_KEY, LithiumSessionRestClient.getRestApiSessionKey());
 		queryParam.add(MAX_AGE, maxAge);
 		queryParam.add(PAGE_SIZE, pageSize);
-
-		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
 			System.out.println("--Invalid Session Key. Hence retry. ");
@@ -325,12 +324,11 @@ public abstract class LithiumConnector {
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/topics/recent";
-		queryParam.add(RESTAPI_SESSION_KEY, LithiumSessionRestClient.getRestApiSessionKey());
 		queryParam.add(MODERATION_SCOPE, moderationScope);
 		queryParam.add(VISIBILITY_SCOPE, visibilityScope);
 		queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 
-		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
 			System.out.println("--Invalid Session Key. Hence retry. ");
@@ -364,10 +362,8 @@ public abstract class LithiumConnector {
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/messages/id/" + messageId;
-		queryParam.add(RESTAPI_SESSION_KEY, LithiumSessionRestClient.getRestApiSessionKey());
 		queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
-
-		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
 			System.out.println("--Invalid Session Key. Hence retry. ");
@@ -397,9 +393,8 @@ public abstract class LithiumConnector {
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId;
-		queryParam.add(RESTAPI_SESSION_KEY, LithiumSessionRestClient.getRestApiSessionKey());
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
-		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
 			System.out.println("--Invalid Session Key. Hence retry. ");
@@ -431,9 +426,8 @@ public abstract class LithiumConnector {
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId
 				+ "/profiles/avatar";
-		queryParam.add(RESTAPI_SESSION_KEY, LithiumSessionRestClient.getRestApiSessionKey());
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
-		String reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
 			System.out.println("--Invalid Session Key. Hence retry. ");
