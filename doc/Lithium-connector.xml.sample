@@ -2,20 +2,20 @@
     <Lithium:get-blog-latest boardIdOrBlogName="scienceofsocial"  />
 <!-- END_INCLUDE(Lithium:get-blog-latest) -->
 
-<!-- BEGIN_INCLUDE(Lithium:post-blog-message) -->
-    <Lithium:post-blog-message messageSubject="Test From Mule connector calling LDN." messageTeaser="GRRR" messageBody="Great Place to put stuff" tagAdd="Stocks,News,Events" labels="FIRST,TEST,GOAL" messageIsDraft="false"  />
-<!-- END_INCLUDE(Lithium:post-blog-message) -->
-
 <!-- BEGIN_INCLUDE(Lithium:get-kudos-leaderboard) -->
     <Lithium:get-kudos-leaderboard boardIdOrBlogName="scienceofsocial" maxAge="all" pageSize="100"  />
 <!-- END_INCLUDE(Lithium:get-kudos-leaderboard) -->
+
+<!-- BEGIN_INCLUDE(Lithium:post-blog-message) -->
+    <Lithium:post-blog-message messageSubject="Test From Mule connector calling LDN." messageTeaser="GRRR" messageBody="Great Place to put stuff" tagAdd="Stocks,News,Events" labels="FIRST,TEST,GOAL" messageIsDraft="false"  />
+<!-- END_INCLUDE(Lithium:post-blog-message) -->
 
 <!-- BEGIN_INCLUDE(Lithium:get-recent-topics) -->
     <Lithium:get-recent-topics boardIdOrBlogName="scienceofsocial" moderationScope="approved" visibilityScope="public"  />
 <!-- END_INCLUDE(Lithium:get-recent-topics) -->
 
 <!-- BEGIN_INCLUDE(Lithium:get-topic-message) -->
-    <Lithium:get-topic-message boardIdOrBlogName="scienceofsocial" messageId="1267" />
+    <Lithium:get-topic-message boardIdOrBlogName="scienceofsocial" messageId="190" />
 <!-- END_INCLUDE(Lithium:get-topic-message) -->
 
 <!-- BEGIN_INCLUDE(Lithium:get-author) -->
@@ -26,3 +26,10 @@
     <Lithium:get-author-avatar userId="1" />
 <!-- END_INCLUDE(Lithium:get-author-avatar) -->
 
+<!-- BEGIN_INCLUDE(Lithium:get-author-solutions-received-count) -->
+    <Lithium:get-author-solutions-received-count userId="1" />
+<!-- END_INCLUDE(Lithium:get-author-solutions-received-count) -->
+
+<!-- BEGIN_INCLUDE(Lithium:get-author-ranking) -->
+    <Lithium:get-author-ranking userId="1" />
+<!-- END_INCLUDE(Lithium:get-author-ranking) -->

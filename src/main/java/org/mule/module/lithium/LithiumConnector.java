@@ -30,7 +30,7 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
 /**
  * Cloud Connector
  * 
- * @author MuleSoft, Inc.
+ * @author Vijay Polsani. Lithium Technologies Inc.
  */
 @Connector(name = "Lithium", schemaVersion = "1.0.0", friendlyName = "Lithium", minMuleVersion = "3.4")
 public abstract class LithiumConnector {
@@ -197,7 +197,7 @@ public abstract class LithiumConnector {
 	}
 
 	/**
-	 * Custom processor for getting the latest message on the Board
+	 * Custom processor for getting the latest blog message on the Board
 	 * <p/>
 	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-blog-latest}
 	 * 
@@ -211,6 +211,41 @@ public abstract class LithiumConnector {
 	public abstract String getBlogLatest(
 			@RestUriParam(value = "boardName") @Optional @Default("scienceofsocial") String boardIdOrBlogName)
 			throws IOException;
+
+	/**
+	 * Custom processor for Kudos Givers leaderboard
+	 * <p/>
+	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-kudos-leaderboard}
+	 * message.author passing is not needed. THe logged in user is enough. If any other author name is kept. It thows an exception.
+	 * @param boardIdOrBlogName The name of the boardID that need to be used in Rest Call 	
+	 * @param maxAge Max age of the post for pull up	
+	 * @param pageSize Max number of pages 	
+	 * @return Response string from the WebService Call
+	 * @throws java.io.IOException throws the exception
+	 */
+	@Processor
+	public String getKudosLeaderboard(@Optional @Default("scienceofsocial") String boardIdOrBlogName,
+			@Optional @Default("all") String maxAge, @Optional @Default("100") String pageSize) throws IOException {
+
+		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
+			System.out.println("-- Session key is NULL. Trying to do admin call.");
+			populateSessionKey();
+		}
+		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
+		String url = "http://" + getCommunityHostname() + "/"
+				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
+				+ boardIdOrBlogName + "/kudos/givers/leaderboard";
+		queryParam.add(MAX_AGE, maxAge);
+		queryParam.add(PAGE_SIZE, pageSize);
+		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
+		if (reponseData.startsWith("3")) {
+			// retry with new session key;
+			System.out.println("--Invalid Session Key. Hence retry. ");
+			populateSessionKey();
+			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		}
+		return reponseData;
+	}
 
 	/**
 	 * Custom processor for posting a message in the blog
@@ -266,42 +301,7 @@ public abstract class LithiumConnector {
 	}
 
 	/**
-	 * Custom processor for Kudos Givers leaderboard
-	 * <p/>
-	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-kudos-leaderboard}
-	 * message.author passing is not needed. THe logged in user is enough. If any other author name is kept. It thows an exception.
-	 * @param boardIdOrBlogName The name of the boardID that need to be used in Rest Call 	
-	 * @param maxAge Max age of the post for pull up	
-	 * @param pageSize Max number of pages 	
-	 * @return Response string from the WebService Call
-	 * @throws java.io.IOException throws the exception
-	 */
-	@Processor
-	public String getKudosLeaderboard(@Optional @Default("scienceofsocial") String boardIdOrBlogName,
-			@Optional @Default("all") String maxAge, @Optional @Default("100") String pageSize) throws IOException {
-
-		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call.");
-			populateSessionKey();
-		}
-		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
-		String url = "http://" + getCommunityHostname() + "/"
-				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
-				+ boardIdOrBlogName + "/kudos/givers/leaderboard";
-		queryParam.add(MAX_AGE, maxAge);
-		queryParam.add(PAGE_SIZE, pageSize);
-		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.startsWith("3")) {
-			// retry with new session key;
-			System.out.println("--Invalid Session Key. Hence retry. ");
-			populateSessionKey();
-			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
-		}
-		return reponseData;
-	}
-
-	/**
-	 * Custom processor for Get Recent Topics in a Board
+	 * Custom processor for Get Recent Topic Messages on the Board
 	 * <p/>
 	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-recent-topics}
 	 * message.author passing is not needed. THe logged in user is enough. If any other author name is kept. It thows an exception.
@@ -326,7 +326,7 @@ public abstract class LithiumConnector {
 				+ boardIdOrBlogName + "/topics/recent";
 		queryParam.add(MODERATION_SCOPE, moderationScope);
 		queryParam.add(VISIBILITY_SCOPE, visibilityScope);
-		queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
+		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 
 		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
 		if (reponseData.startsWith("3")) {
@@ -338,9 +338,8 @@ public abstract class LithiumConnector {
 		return reponseData;
 	}
 
-	// TODO: Try sending the object type to marshall response.
 	/**
-	 * Custom processor for getting the latest message on the Board
+	 * Custom processor for getting the single topic message on the Board
 	 * <p/>
 	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-topic-message}
 	 * 
@@ -362,7 +361,7 @@ public abstract class LithiumConnector {
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/messages/id/" + messageId;
-		queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
+		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
 		if (reponseData.startsWith("3")) {
 			// retry with new session key;
@@ -373,9 +372,8 @@ public abstract class LithiumConnector {
 		return reponseData;
 	}
 
-	// TODO: Try sending the object type to marshall response.
 	/**
-	 * Custom processor for getting the latest message on the Board
+	 * Custom processor for getting the User Profile.
 	 * <p/>
 	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-author}
 	 * 
@@ -404,9 +402,8 @@ public abstract class LithiumConnector {
 		return reponseData;
 	}
 
-	// TODO: Try sending the object type to marshall response.
 	/**
-	 * Custom processor for getting the latest message on the Board
+	 * Custom processor for getting the Avatar of the User.
 	 * <p/>
 	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-author-avatar}
 	 * 
@@ -426,6 +423,70 @@ public abstract class LithiumConnector {
 		String url = "http://" + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId
 				+ "/profiles/avatar";
+		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
+		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
+		if (reponseData.startsWith("3")) {
+			// retry with new session key;
+			System.out.println("--Invalid Session Key. Hence retry. ");
+			populateSessionKey();
+			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		}
+		return reponseData;
+	}
+
+	/**
+	 * Custom processor for getting the Count of Solutions Received by the User.
+	 * <p/>
+	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-author-solutions-received-count}
+	 * 
+	 * @param userId A parameter to pass message id.
+	 * @return Some string
+	 * @throws java.io.IOException
+	 *             throws the exception
+	 */
+	@Processor
+	public String getAuthorSolutionsReceivedCount(@Optional @Default("1") String userId) throws IOException {
+
+		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
+			System.out.println("-- Session key is NULL. Trying to do admin call.");
+			populateSessionKey();
+		}
+		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
+		String url = "http://" + getCommunityHostname() + "/"
+				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId
+				+ "/solutions/received/count";
+		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
+		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
+		if (reponseData.startsWith("3")) {
+			// retry with new session key;
+			System.out.println("--Invalid Session Key. Hence retry. ");
+			populateSessionKey();
+			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		}
+		return reponseData;
+	}
+
+	/**
+	 * Custom processor for getting the Ranking of the User.
+	 * <p/>
+	 * {@sample.xml ../../../doc/Lithium-connector.xml.sample Lithium:get-author-ranking}
+	 * 
+	 * @param userId A parameter to pass message id.
+	 * @return Some string
+	 * @throws java.io.IOException
+	 *             throws the exception
+	 */
+	@Processor
+	public String getAuthorRanking(@Optional @Default("1") String userId) throws IOException {
+
+		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
+			System.out.println("-- Session key is NULL. Trying to do admin call.");
+			populateSessionKey();
+		}
+		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
+		String url = "http://" + getCommunityHostname() + "/"
+				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId
+				+ "/ranking";
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
 		if (reponseData.startsWith("3")) {
