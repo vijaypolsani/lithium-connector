@@ -1,11 +1,17 @@
 package com.lithium.integrations;
 
+import java.io.ByteArrayInputStream;
+
 import javax.ws.rs.core.MultivaluedMap;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
+import com.lithium.integrations.model.LithiumGenericResponse;
 import com.lithium.integrations.model.LithiumLoginResponse;
 import static com.lithium.integrations.constants.QueryParameterConstants.*;
 
@@ -30,15 +36,12 @@ public class LithiumSessionRestClient {
 		WebResource webResource = client.resource(url);
 		ClientResponse response = webResource.queryParams(queryParams).accept("application/xml")
 				.get(ClientResponse.class);
-		if (response.getStatus() != 200) {
-			System.out.println("In Jersey Client. Login Response Data: " + response.getStatus());
-			throw new RuntimeException("Failed : HTTP error code : " + response.getStatus());
-		} else if (String.valueOf(response.getStatus()).startsWith("3")) {
-			return String.valueOf(response.getStatus());
-		}
-		System.out.println("In Jersey Client. Made Admin Call.");
 		LithiumLoginResponse lithiumLoginResponse = response.getEntity(LithiumLoginResponse.class);
-		System.out.println(lithiumLoginResponse);
+		if (lithiumLoginResponse.getStatus().equalsIgnoreCase("error")) {
+			System.out.println("In Jersey Client. Login did not succeed: " + lithiumLoginResponse);
+			return lithiumLoginResponse.getStatus();
+		}
+		System.out.println("In Jersey Client. Made Admin Call." + lithiumLoginResponse);
 		setRestApiSessionKey(lithiumLoginResponse.getValue());
 		return lithiumLoginResponse.getValue();
 	}
@@ -59,6 +62,18 @@ public class LithiumSessionRestClient {
 		}
 		System.out.println("In Jersey Client. Making Genric restapi Call.");
 		String restResponse = response.getEntity(String.class);
+
+		try {
+			JAXBContext jaxbContext = JAXBContext.newInstance(LithiumGenericResponse.class);
+			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+			LithiumGenericResponse lithiumGenericResponse = (LithiumGenericResponse) jaxbUnmarshaller
+					.unmarshal(new ByteArrayInputStream(restResponse.getBytes()));
+			if (lithiumGenericResponse.getStatus().equalsIgnoreCase(ERROR))
+				return ERROR;
+		} catch (JAXBException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		System.out.println(restResponse);
 		return restResponse;
 	}

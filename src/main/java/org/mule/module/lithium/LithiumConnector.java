@@ -238,8 +238,8 @@ public abstract class LithiumConnector {
 		queryParam.add(MAX_AGE, maxAge);
 		queryParam.add(PAGE_SIZE, pageSize);
 		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.startsWith("3")) {
-			// retry with new session key;
+		if (reponseData.equalsIgnoreCase(ERROR)) {
+			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
 			System.out.println("--Invalid Session Key. Hence retry. ");
 			populateSessionKey();
 			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
@@ -287,15 +287,11 @@ public abstract class LithiumConnector {
 		queryParam.add(MESSAGE_IS_DRAFT, messageIsDraft);
 
 		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.startsWith("3")) {
-			// retry with new session key;
+		if (reponseData.equalsIgnoreCase(ERROR)) {
+			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
 			System.out.println("--Invalid Session Key. Hence retry. ");
 			populateSessionKey();
 			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
-		} else if (reponseData.startsWith("4")) {
-			// Page not found etc;
-			System.out.println("--Invalid Request. Check the URL and come back again. ");
-			throw new RuntimeException("--Invalid Request. Check the URL and come back again.");
 		}
 		return reponseData;
 	}
@@ -329,8 +325,8 @@ public abstract class LithiumConnector {
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 
 		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.startsWith("3")) {
-			// retry with new session key;
+		if (reponseData.equalsIgnoreCase(ERROR)) {
+			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
 			System.out.println("--Invalid Session Key. Hence retry. ");
 			populateSessionKey();
 			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
@@ -363,8 +359,8 @@ public abstract class LithiumConnector {
 				+ boardIdOrBlogName + "/messages/id/" + messageId;
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.startsWith("3")) {
-			// retry with new session key;
+		if (reponseData.equalsIgnoreCase(ERROR)) {
+			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
 			System.out.println("--Invalid Session Key. Hence retry. ");
 			populateSessionKey();
 			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
@@ -393,8 +389,8 @@ public abstract class LithiumConnector {
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId;
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.startsWith("3")) {
-			// retry with new session key;
+		if (reponseData.equalsIgnoreCase(ERROR)) {
+			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
 			System.out.println("--Invalid Session Key. Hence retry. ");
 			populateSessionKey();
 			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
@@ -425,8 +421,8 @@ public abstract class LithiumConnector {
 				+ "/profiles/avatar";
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.startsWith("3")) {
-			// retry with new session key;
+		if (reponseData.equalsIgnoreCase(ERROR)) {
+			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
 			System.out.println("--Invalid Session Key. Hence retry. ");
 			populateSessionKey();
 			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
@@ -457,8 +453,8 @@ public abstract class LithiumConnector {
 				+ "/solutions/received/count";
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.startsWith("3")) {
-			// retry with new session key;
+		if (reponseData.equalsIgnoreCase(ERROR)) {
+			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
 			System.out.println("--Invalid Session Key. Hence retry. ");
 			populateSessionKey();
 			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
@@ -489,8 +485,8 @@ public abstract class LithiumConnector {
 				+ "/ranking";
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.startsWith("3")) {
-			// retry with new session key;
+		if (reponseData.equalsIgnoreCase(ERROR)) {
+			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
 			System.out.println("--Invalid Session Key. Hence retry. ");
 			populateSessionKey();
 			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
