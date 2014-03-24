@@ -1,6 +1,8 @@
 package com.lithium.integrations.constants;
 
 public class QueryParameterConstants {
+
+	public static final String HTTP = "http://";
 	public static final String LOGIN_URL = "http://ldn.qa.lithium.com/restapi/vc/authentication/sessions/login";
 	public static final String MESSAGE_SUBJECT = "message.subject";
 	public static final String MESSAGE_TEASER = "message.teaser";
@@ -21,5 +23,5 @@ public class QueryParameterConstants {
 	public static final String RESPONSE_FORMAT_PARAM = "restapi.response_format";
 	public static final String RESPONSE_FORMAT_VALUE = "json";
 	public static final String ERROR = "error";
-	
+
 }

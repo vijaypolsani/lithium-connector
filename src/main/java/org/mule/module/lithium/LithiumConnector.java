@@ -22,9 +22,15 @@ import org.mule.api.annotations.rest.RestExceptionOn;
 import org.mule.api.ConnectionException;
 import org.mule.api.annotations.Configurable;
 import org.mule.api.annotations.Processor;
-import static com.lithium.integrations.constants.QueryParameterConstants.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import static com.lithium.integrations.constants.QueryParameterConstants.*;
+import static com.lithium.integrations.constants.LithiumConnectorErrorCodes.*;
+
+import com.lithium.integrations.LithiumConnectorException;
 import com.lithium.integrations.LithiumSessionRestClient;
+import com.lithium.integrations.constants.LithiumConnectorErrorCodes;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
@@ -34,7 +40,7 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
  */
 @Connector(name = "Lithium", schemaVersion = "1.0.0", friendlyName = "Lithium", minMuleVersion = "3.4")
 public abstract class LithiumConnector {
-
+	public static Logger log = LoggerFactory.getLogger(LithiumConnector.class);
 	private final MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
 
 	public MultivaluedMap<String, String> getQueryParams() {
@@ -143,19 +149,20 @@ public abstract class LithiumConnector {
 		this.restApiSessionKey = restApiSessionKey;
 	}
 
-	/**
-	 * Configurable
+	/** 
+	 * The method is a generic utility method to populate the session key or make call for Getting a SessionKey  
 	 */
 	public void populateSessionKey() {
-		System.out.println("**Start of populateSessionKey with User/Password: " + getLithiumUserName() + "/"
-				+ getLithiumPassword() + " SessionKey: " + getRestApiSessionKey() + " Hostname: "
-				+ getCommunityHostname());
+		log.info("Start of populateSessionKey with User/Password: " + getLithiumUserName() + "/" + getLithiumPassword()
+				+ " SessionKey: " + getRestApiSessionKey() + " Hostname: " + getCommunityHostname());
 		MultivaluedMap<String, String> adminQueryParams = new MultivaluedMapImpl();
 		adminQueryParams.add(LOGIN_USER_NAME_PARAM, getLithiumUserName());
 		adminQueryParams.add(LOGIN_PASSWORD_PARAM, getLithiumPassword());
-		// Null implies login.
-		LithiumSessionRestClient.invokeToGetRestSessionKey(null, adminQueryParams);
-		System.out.println("** End of populateSessionKey Key: " + LithiumSessionRestClient.getRestApiSessionKey());
+		String url = HTTP + getCommunityHostname() + "/"
+				+ (getCommunityName() == null ? "" : (getCommunityName() + "/"))
+				+ "restapi/vc/authentication/sessions/login";
+		LithiumSessionRestClient.invokeToGetRestSessionKey(url, adminQueryParams);
+		log.debug("End of populateSessionKey Key: " + LithiumSessionRestClient.getRestApiSessionKey());
 	}
 
 	/**
@@ -167,7 +174,7 @@ public abstract class LithiumConnector {
 	 */
 	@Connect
 	public void connect(@ConnectionKey String username, String password) throws ConnectionException {
-		System.out.println("**In Connect. username/password: " + username + "/" + password);
+		log.debug("In Connect. username/password: " + username + "/" + password);
 	}
 
 	/**
@@ -175,9 +182,6 @@ public abstract class LithiumConnector {
 	 */
 	@Disconnect
 	public void disconnect() {
-		/*
-		 * CODE FOR CLOSING A CONNECTION GOES IN HERE
-		 */
 	}
 
 	/**
@@ -228,21 +232,27 @@ public abstract class LithiumConnector {
 			@Optional @Default("all") String maxAge, @Optional @Default("100") String pageSize) throws IOException {
 
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call.");
+			log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2000.getDescription());
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
-		String url = "http://" + getCommunityHostname() + "/"
+		String url = HTTP + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/kudos/givers/leaderboard";
 		queryParam.add(MAX_AGE, maxAge);
 		queryParam.add(PAGE_SIZE, pageSize);
-		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.equalsIgnoreCase(ERROR)) {
-			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
-			System.out.println("--Invalid Session Key. Hence retry. ");
-			populateSessionKey();
-			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData = null;
+		try {
+			reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
+			if (reponseData.equalsIgnoreCase(ERROR)) {
+				//TODO: retry with new session key. We expect only Session problems in this Beta. This has to be enhanced.
+				log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2001.getDescription());
+				populateSessionKey();
+				reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+			}
+		} catch (LithiumConnectorException e) {
+			e.printStackTrace();
+			return LithiumConnectorErrorCodes.CONNECTOR_1000.getDescription();
 		}
 		return reponseData;
 	}
@@ -272,11 +282,11 @@ public abstract class LithiumConnector {
 			throws IOException {
 
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call.");
+			log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2000.getDescription());
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
-		String url = "http://" + getCommunityHostname() + "/"
+		String url = HTTP + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/messages/post";
 		queryParam.add(MESSAGE_SUBJECT, messageSubject);
@@ -286,12 +296,18 @@ public abstract class LithiumConnector {
 		queryParam.add(LABEL_LABELS, labels);
 		queryParam.add(MESSAGE_IS_DRAFT, messageIsDraft);
 
-		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.equalsIgnoreCase(ERROR)) {
-			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
-			System.out.println("--Invalid Session Key. Hence retry. ");
-			populateSessionKey();
-			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData;
+		try {
+			reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
+			if (reponseData.equalsIgnoreCase(ERROR)) {
+				//TODO: retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
+				log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2001.getDescription());
+				populateSessionKey();
+				reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+			}
+		} catch (LithiumConnectorException e) {
+			e.printStackTrace();
+			return LithiumConnectorErrorCodes.CONNECTOR_1000.getDescription();
 		}
 		return reponseData;
 	}
@@ -313,23 +329,29 @@ public abstract class LithiumConnector {
 			throws IOException {
 
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call.");
+			log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2000.getDescription());
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
-		String url = "http://" + getCommunityHostname() + "/"
+		String url = HTTP + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/topics/recent";
 		queryParam.add(MODERATION_SCOPE, moderationScope);
 		queryParam.add(VISIBILITY_SCOPE, visibilityScope);
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
 
-		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.equalsIgnoreCase(ERROR)) {
-			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
-			System.out.println("--Invalid Session Key. Hence retry. ");
-			populateSessionKey();
-			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData;
+		try {
+			reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
+			if (reponseData.equalsIgnoreCase(ERROR)) {
+				//TODO: retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
+				log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2001.getDescription());
+				populateSessionKey();
+				reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+			}
+		} catch (LithiumConnectorException e) {
+			e.printStackTrace();
+			return LithiumConnectorErrorCodes.CONNECTOR_1000.getDescription();
 		}
 		return reponseData;
 	}
@@ -350,20 +372,26 @@ public abstract class LithiumConnector {
 			@Optional @Default("1267") String messageId) throws IOException {
 
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call.");
+			log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2000.getDescription());
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
-		String url = "http://" + getCommunityHostname() + "/"
+		String url = HTTP + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/blogs/id/"
 				+ boardIdOrBlogName + "/messages/id/" + messageId;
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
-		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.equalsIgnoreCase(ERROR)) {
-			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
-			System.out.println("--Invalid Session Key. Hence retry. ");
-			populateSessionKey();
-			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData;
+		try {
+			reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
+			if (reponseData.equalsIgnoreCase(ERROR)) {
+				//TODO: retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
+				log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2001.getDescription());
+				populateSessionKey();
+				reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+			}
+		} catch (LithiumConnectorException e) {
+			e.printStackTrace();
+			return LithiumConnectorErrorCodes.CONNECTOR_1000.getDescription();
 		}
 		return reponseData;
 	}
@@ -381,19 +409,25 @@ public abstract class LithiumConnector {
 	@Processor
 	public String getAuthor(@Optional @Default("1") String userId) throws IOException {
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call.");
+			log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2000.getDescription());
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
-		String url = "http://" + getCommunityHostname() + "/"
+		String url = HTTP + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId;
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
-		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.equalsIgnoreCase(ERROR)) {
-			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
-			System.out.println("--Invalid Session Key. Hence retry. ");
-			populateSessionKey();
-			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData;
+		try {
+			reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
+			if (reponseData.equalsIgnoreCase(ERROR)) {
+				//TODO: retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
+				log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2001.getDescription());
+				populateSessionKey();
+				reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+			}
+		} catch (LithiumConnectorException e) {
+			e.printStackTrace();
+			return LithiumConnectorErrorCodes.CONNECTOR_1000.getDescription();
 		}
 		return reponseData;
 	}
@@ -412,20 +446,26 @@ public abstract class LithiumConnector {
 	public String getAuthorAvatar(@Optional @Default("1") String userId) throws IOException {
 
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call.");
+			log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2000.getDescription());
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
-		String url = "http://" + getCommunityHostname() + "/"
+		String url = HTTP + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId
 				+ "/profiles/avatar";
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
-		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.equalsIgnoreCase(ERROR)) {
-			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
-			System.out.println("--Invalid Session Key. Hence retry. ");
-			populateSessionKey();
-			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData;
+		try {
+			reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
+			if (reponseData.equalsIgnoreCase(ERROR)) {
+				//TODO: retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
+				log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2001.getDescription());
+				populateSessionKey();
+				reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+			}
+		} catch (LithiumConnectorException e) {
+			e.printStackTrace();
+			return LithiumConnectorErrorCodes.CONNECTOR_1000.getDescription();
 		}
 		return reponseData;
 	}
@@ -444,20 +484,26 @@ public abstract class LithiumConnector {
 	public String getAuthorSolutionsReceivedCount(@Optional @Default("1") String userId) throws IOException {
 
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call.");
+			log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2000.getDescription());
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
-		String url = "http://" + getCommunityHostname() + "/"
+		String url = HTTP + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId
 				+ "/solutions/received/count";
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
-		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.equalsIgnoreCase(ERROR)) {
-			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
-			System.out.println("--Invalid Session Key. Hence retry. ");
-			populateSessionKey();
-			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData;
+		try {
+			reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
+			if (reponseData.equalsIgnoreCase(ERROR)) {
+				//TODO: retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
+				log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2001.getDescription());
+				populateSessionKey();
+				reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+			}
+		} catch (LithiumConnectorException e) {
+			e.printStackTrace();
+			return LithiumConnectorErrorCodes.CONNECTOR_1000.getDescription();
 		}
 		return reponseData;
 	}
@@ -476,20 +522,26 @@ public abstract class LithiumConnector {
 	public String getAuthorRanking(@Optional @Default("1") String userId) throws IOException {
 
 		if (LithiumSessionRestClient.getRestApiSessionKey() == null) {
-			System.out.println("-- Session key is NULL. Trying to do admin call.");
+			log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2000.getDescription());
 			populateSessionKey();
 		}
 		MultivaluedMap<String, String> queryParam = new MultivaluedMapImpl();
-		String url = "http://" + getCommunityHostname() + "/"
+		String url = HTTP + getCommunityHostname() + "/"
 				+ (getCommunityName() == null ? "" : (getCommunityName() + "/")) + "restapi/vc/users/id/" + userId
 				+ "/ranking";
 		//queryParam.add(RESPONSE_FORMAT_PARAM, RESPONSE_FORMAT_VALUE);
-		String reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
-		if (reponseData.equalsIgnoreCase(ERROR)) {
-			// retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
-			System.out.println("--Invalid Session Key. Hence retry. ");
-			populateSessionKey();
-			reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+		String reponseData;
+		try {
+			reponseData = LithiumSessionRestClient.invokeGenericRestCall(url, queryParam);
+			if (reponseData.equalsIgnoreCase(ERROR)) {
+				//TODO: retry with new session key. We expect only Session problems in this DEMO. This has to be enhanced.
+				log.info(LithiumConnectorErrorCodes.CONNECTOR_REST_CLIENT_2001.getDescription());
+				populateSessionKey();
+				reponseData = LithiumSessionRestClient.invokeToGetRestSessionKey(url, queryParam);
+			}
+		} catch (LithiumConnectorException e) {
+			e.printStackTrace();
+			return LithiumConnectorErrorCodes.CONNECTOR_1000.getDescription();
 		}
 		return reponseData;
 	}
